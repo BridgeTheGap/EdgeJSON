@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'EdgeJSON_Example' do
+  pod 'EdgeJSON', :path => '../'
+
+  target 'EdgeJSON_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
