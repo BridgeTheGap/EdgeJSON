@@ -1,0 +1,6 @@
+framework module Pods_EdgeJSON_Tests {
+  umbrella header "Pods-EdgeJSON_Tests-umbrella.h"
+
+  export *
+  module * { export * }
+}

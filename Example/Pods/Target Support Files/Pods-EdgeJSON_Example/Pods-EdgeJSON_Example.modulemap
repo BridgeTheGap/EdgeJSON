@@ -1,0 +1,6 @@
+framework module Pods_EdgeJSON_Example {
+  umbrella header "Pods-EdgeJSON_Example-umbrella.h"
+
+  export *
+  module * { export * }
+}
