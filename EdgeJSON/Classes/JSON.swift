@@ -33,11 +33,6 @@ public struct JSON {
         case dictionary
     }
     
-    public struct DataChecker {
-        let key: String
-        let type: ElementType
-    }
-    
     public static var errorHandler: JSONErrorHandler? = nil
     
     // MARK: - JSON encoding
@@ -94,44 +89,44 @@ public struct JSON {
     
     // MARK: - Data checker
     
-    public static func checkJSON(_ json: [String: Any], with dataChecker: [DataChecker]) -> Bool {
+    public static func checkJSON(_ json: [String: Any], with dataChecker: [String: ElementType]) -> Bool {
         var errors = [TypeError]()
         
-        for dc in dataChecker {
-            guard let value = json[dc.key] else {
-                errors.append(.invalidKey(dc.key))
+        for (key, type) in dataChecker {
+            guard let value = json[key] else {
+                errors.append(.invalidKey(key))
                 continue
             }
             
-            switch dc.type {
+            switch type {
             case .array:
                 guard value is [Any] else {
-                    errors.append(.invalidValueType(key: dc.key, type: [Any].self))
+                    errors.append(.invalidValueType(key: key, type: [Any].self))
                     continue
                 }
             case .bool:
                 guard value is Bool else {
-                    errors.append(.invalidValueType(key: dc.key, type: Bool.self))
+                    errors.append(.invalidValueType(key: key, type: Bool.self))
                     continue
                 }
             case .dictionary:
                 guard value is [String: Any] else {
-                    errors.append(.invalidValueType(key: dc.key, type: [String: Any].self))
+                    errors.append(.invalidValueType(key: key, type: [String: Any].self))
                     continue
                 }
             case .double:
                 guard value is Double else {
-                    errors.append(.invalidValueType(key: dc.key, type: Double.self))
+                    errors.append(.invalidValueType(key: key, type: Double.self))
                     continue
                 }
             case .int:
                 guard value is Int else {
-                    errors.append(.invalidValueType(key: dc.key, type: Int.self))
+                    errors.append(.invalidValueType(key: key, type: Int.self))
                     continue
                 }
             case .string:
                 guard value is String else {
-                    errors.append(.invalidValueType(key: dc.key, type: String.self))
+                    errors.append(.invalidValueType(key: key, type: String.self))
                     continue
                 }
             }
@@ -153,7 +148,7 @@ public struct JSON {
     
     private var item: [String: Any]
     
-    public init?(_ dictionary: [String: Any], dataChecker: [DataChecker]) {
+    public init?(_ dictionary: [String: Any], _ dataChecker: [String: ElementType]) {
         guard JSON.checkJSON(dictionary, with: dataChecker) else { return nil }
         item = dictionary
     }
