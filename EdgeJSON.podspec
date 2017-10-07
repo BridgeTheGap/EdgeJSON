@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'EdgeJSON'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of EdgeJSON.'
+  s.summary          = 'A set of extensions for JSON type'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,7 +18,9 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+EdgeJSON contains a set of useful extensions for [String: Any] type in Swift.
+Using the JSON static functions, you can handle all errors in one place: the `errorHandler`.
+By doing this, your code does not have to be riddled with `do-catch`s and `try`s.
                        DESC
 
   s.homepage         = 'https://github.com/<GITHUB_USERNAME>/EdgeJSON'

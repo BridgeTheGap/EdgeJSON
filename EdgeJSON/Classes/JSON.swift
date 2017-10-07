@@ -14,83 +14,172 @@ import Foundation
 //    so as to avoid `do-catch` and `try`s in your code.
 
 public struct JSON {
-
-    // MARK: - JSON encoding
     
-    static func data(from object: Any) -> Data? {
-        return try? JSONSerialization.data(withJSONObject: object)
+    public enum TypeError: Error {
+        case stringConversionError
+        case dataConversionError
+        case initializationError
+        case invalidType(Any.Type)
+        case invalidKey(String)
+        case invalidValueType(key: String, type: Any.Type)
     }
     
-    static func encodedString(from object: Any, allowEmpty: Bool = true) -> String? {
+    public enum ElementType {
+        case string
+        case int
+        case double
+        case bool
+        case array
+        case dictionary
+    }
+    
+    public struct DataChecker {
+        let key: String
+        let type: ElementType
+    }
+    
+    public static var errorHandler: JSONErrorHandler? = nil
+    
+    // MARK: - JSON encoding
+    
+    public static func data(from object: Any) -> Data? {
+        do {
+            return try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted])
+        } catch {
+            errorHandler?.handle(error: error)
+            return nil
+        }
+    }
+    
+    public static func string(from object: Any) -> String? {
         guard let data = JSON.data(from: object) else { return nil }
         let str = String(data: data, encoding: .utf8)
-        return allowEmpty || str?.isEmpty == false ? str : nil
+        return str?.isEmpty == false ? str : nil
     }
     
     // MARK: - Decoding
     
-    static func dic(from string: String) -> [String: Any]? {
-        return (try? string.jsonDic()) ?? nil
+    private static func dictionary(from data: Data, options: JSONSerialization.ReadingOptions = []) throws -> [String: Any]? {
+        guard let json = try JSONSerialization.jsonObject(with: data,
+                                                          options: options) as? [String: Any] else
+        {
+            throw TypeError.invalidType([String: Any].self)
+        }
+        
+        return json
     }
     
-    static func dic(from data: Data) -> [String: Any]? {
-        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    public static func dic(from string: String, options: JSONSerialization.ReadingOptions = []) -> [String: Any]? {
+        do {
+            guard let data = string.data(using: .utf8) else {
+                throw TypeError.dataConversionError
+            }
+            
+            return try dictionary(from: data, options: options)
+        } catch {
+            errorHandler?.handle(error: error)
+            
+            return nil
+        }
+    }
+    
+    public static func dic(from data: Data, options: JSONSerialization.ReadingOptions = []) -> [String: Any]? {
+        do {
+            return try dictionary(from: data, options: options)
+        } catch {
+            errorHandler?.handle(error: error)
+            return nil
+        }
+    }
+    
+    // MARK: - Data checker
+    
+    public static func checkJSON(_ json: [String: Any], with dataChecker: [DataChecker]) -> Bool {
+        var errors = [TypeError]()
+        
+        for dc in dataChecker {
+            guard let value = json[dc.key] else {
+                errors.append(.invalidKey(dc.key))
+                continue
+            }
+            
+            switch dc.type {
+            case .array:
+                guard value is [Any] else {
+                    errors.append(.invalidValueType(key: dc.key, type: [Any].self))
+                    continue
+                }
+            case .bool:
+                guard value is Bool else {
+                    errors.append(.invalidValueType(key: dc.key, type: Bool.self))
+                    continue
+                }
+            case .dictionary:
+                guard value is [String: Any] else {
+                    errors.append(.invalidValueType(key: dc.key, type: [String: Any].self))
+                    continue
+                }
+            case .double:
+                guard value is Double else {
+                    errors.append(.invalidValueType(key: dc.key, type: Double.self))
+                    continue
+                }
+            case .int:
+                guard value is Int else {
+                    errors.append(.invalidValueType(key: dc.key, type: Int.self))
+                    continue
+                }
+            case .string:
+                guard value is String else {
+                    errors.append(.invalidValueType(key: dc.key, type: String.self))
+                    continue
+                }
+            }
+        }
+        
+        if errors.isEmpty {
+            return true
+        } else {
+            for error in errors {
+                errorHandler?.handle(error: error)
+            }
+            
+            return false
+        }
+        
+    }
+    
+    // MARK: - Interface
+    
+    private var item: [String: Any]
+    
+    public init?(_ dictionary: [String: Any], dataChecker: [DataChecker]) {
+        guard JSON.checkJSON(dictionary, with: dataChecker) else { return nil }
+        item = dictionary
+    }
+    
+    public func bool(_ key: String) -> Bool {
+        return item[key] as! Bool
+    }
+    
+    public func int(_ key: String) -> Int {
+        return item[key] as! Int
+    }
+    
+    public func double(_ key: String) -> Double {
+        return item[key] as! Double
+    }
+    
+    public func str(_ key: String) -> String {
+        return item[key] as! String
+    }
+    
+    public func dic(_ key: String) -> [String: Any] {
+        return item[key] as! [String: Any]
+    }
+    
+    public func arr(_ key: String) -> [Any] {
+        return item[key] as! [Any]
     }
     
 }
-
-func sort<T: Comparable>(array: [[String: T]], byKey key: String, ascending: Bool) -> [[String: T]] {
-    return ascending ? array.sorted { return $0[key] < $1[key] } : array.sorted { return $0[key] > $1[key] }
-}
-
-func sortInPlace<T: Comparable>(array: inout [[String: T]], byKey key: String, ascending: Bool) {
-    if ascending { array.sort { $0[key] < $1[key] } }
-    else         { array.sort { $0[key] > $1[key] } }
-}
-
-//public func ==(lhs: [String: Any], rhs: [String: Any] ) -> Bool {
-//    return NSDictionary(dictionary: lhs).isEqual(to: rhs)
-//}
-//
-//public extension ExpressibleByArrayLiteral where Element == [String: Any] {
-//    public func get<T: Equatable>(_ key: String, value: T) -> [String: Any]? {
-//        for dic in self as! [[String: Any]] {
-//            if let v = dic[key] , v is T && v as! T == value {
-//                return dic
-//            }
-//        }
-//        return nil
-//    }
-//
-//    public func getWithIndex<T: Equatable>(_ key: String, value: T) -> (index: Int?, value: [String: Any]?) {
-//        for (idx, dic) in (self as! [[String: Any]]).enumerated() {
-//            if let v = dic[key] , v is T && v as! T == value {
-//                return (idx, dic)
-//            }
-//        }
-//        return (nil, nil)
-//    }
-//
-//    public func getAll(_ key: String) -> [Any]? {
-//        let arraySelf = self as! [[String: Any]]
-//        let result = arraySelf.reduce([Any]()) {
-//            if let value = $0.1[key] { return $0.0 + [value] }
-//            else { return $0.0 }
-//        }
-//        return result.count > 0 ? result : nil
-//    }
-//}
-//
-//public extension ExpressibleByArrayLiteral where Element == [Any] {
-//    public func get<T: Equatable>(_ value: T) -> [Any]? {
-//        for array in self as! [[Any]] {
-//            for element in array {
-//                if let e = element as? T , e == value {
-//                    return array
-//                }
-//            }
-//        }
-//        return nil
-//    }
-//}
-
