@@ -28,7 +28,7 @@ public extension Dictionary {
     
     public func nilStr(_ key: Key) -> String? {
         guard let str = self[key] as? String else { return nil }
-        return str.characters.count > 0 ? str : nil
+        return str.count > 0 ? str : nil
     }
     
     public func dic(_ key: Key) -> [String: Any]? {

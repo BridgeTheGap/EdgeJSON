@@ -54,7 +54,10 @@ public struct JSON {
     
     // MARK: - Decoding
     
-    private static func dictionary(from data: Data, options: JSONSerialization.ReadingOptions = []) throws -> [String: Any]? {
+    private static func dictionary(from data: Data,
+                                   options: JSONSerialization.ReadingOptions = []) throws
+        -> [String: Any]?
+    {
         guard let json = try JSONSerialization.jsonObject(with: data,
                                                           options: options) as? [String: Any] else
         {
@@ -64,7 +67,10 @@ public struct JSON {
         return json
     }
     
-    public static func dic(from string: String, options: JSONSerialization.ReadingOptions = []) -> [String: Any]? {
+    public static func dic(from string: String,
+                           options: JSONSerialization.ReadingOptions = [])
+        -> [String: Any]?
+    {
         do {
             guard let data = string.data(using: .utf8) else {
                 throw TypeError.dataConversionError
@@ -78,7 +84,10 @@ public struct JSON {
         }
     }
     
-    public static func dic(from data: Data, options: JSONSerialization.ReadingOptions = []) -> [String: Any]? {
+    public static func dic(from data: Data,
+                           options: JSONSerialization.ReadingOptions = [])
+        -> [String: Any]?
+    {
         do {
             return try dictionary(from: data, options: options)
         } catch {
@@ -89,7 +98,9 @@ public struct JSON {
     
     // MARK: - Data checker
     
-    public static func checkJSON(_ json: [String: Any], with dataChecker: [String: ElementType]) -> Bool {
+    public static func checkJSON(_ json: [String: Any],
+                                 with dataChecker: [String: ElementType]) -> Bool
+    {
         var errors = [TypeError]()
         
         for (key, type) in dataChecker {
@@ -148,8 +159,13 @@ public struct JSON {
     
     private var item: [String: Any]
     
-    public init?(_ dictionary: [String: Any], _ dataChecker: [String: ElementType]) {
-        guard JSON.checkJSON(dictionary, with: dataChecker) else { return nil }
+    public init?(_ dictionary: [String: Any],
+                 _ dataChecker: [String: ElementType]?)
+    {
+        if let dataChecker = dataChecker {
+            guard JSON.checkJSON(dictionary, with: dataChecker) else { return nil }
+        }
+        
         item = dictionary
     }
     
@@ -175,6 +191,10 @@ public struct JSON {
     
     public func arr(_ key: String) -> [Any] {
         return item[key] as! [Any]
+    }
+    
+    public func get(_ key: String) -> Any? {
+        return item[key]
     }
     
 }
